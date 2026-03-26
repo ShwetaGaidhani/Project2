@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rule-Based Expert System - Medical Diagnosis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .panel h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .fact-input {
+            margin-bottom: 20px;
+        }
+
+        .fact-input input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .fact-input input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .facts-list {
+            margin-top: 20px;
+        }
+
+        .fact-item {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid #667eea;
+        }
+
+        .fact-item.derived {
+            border-left-color: #27ae60;
+            background: #e8f8f0;
+        }
+
+        .fact-badge {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .fact-badge.derived {
+            background: #27ae60;
+        }
+
+        .remove-fact {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .remove-fact:hover {
+            background: #c0392b;
+        }
+
+        .inference-log {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .log-entry {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-step {
+            color: #667eea;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .log-rule {
+            color: #27ae60;
+            margin: 5px 0;
+        }
+
+        .log-conclusion {
+            color: #e74c3c;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        .results-panel {
+            grid-column: 1 / -1;
+        }
+
+        .conclusion-item {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .conclusion-item h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .conclusion-item p {
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .example-symptoms {
+            background: #fff9e6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #f39c12;
+        }
+
+        .example-symptoms h4 {
+            color: #f39c12;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .symptom-chip {
+            display: inline-block;
+            background: white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            margin: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #f39c12;
+        }
+
+        .symptom-chip:hover {
+            background: #f39c12;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🧠 Rule-Based Expert System</h1>
+            <p class="subtitle">Medical Diagnosis System with Forward Chaining Inference Engine</p>
+        </header>
+
+        <div class="main-content">
+            <div class="panel">
+                <h2>📝 Input Facts (Symptoms)</h2>
+                <div class="fact-input">
+                    <input type="text" id="factInput" placeholder="Enter a symptom (e.g., fever, cough, headache)" />
+                </div>
+                <button class="btn btn-primary" onclick="addFact()">Add Symptom</button>
+                <button class="btn btn-secondary" onclick="runInference()">🔍 Run Diagnosis</button>
+                <button class="btn btn-danger" onclick="reset()">Clear All</button>
+
+                <div class="example-symptoms">
+                    <h4>💡 Click to add example symptoms:</h4>
+                    <span class="symptom-chip" onclick="addFactByClick('fever')">fever</span>
+                    <span class="symptom-chip" onclick="addFactByClick('cough')">cough</span>
+                    <span class="symptom-chip" onclick="addFactByClick('sore_throat')">sore_throat</span>
+                    <span class="symptom-chip" onclick="addFactByClick('headache')">headache</span>
+                    <span class="symptom-chip" onclick="addFactByClick('runny_nose')">runny_nose</span>
+                    <span class="symptom-chip" onclick="addFactByClick('body_ache')">body_ache</span>
+                    <span class="symptom-chip" onclick="addFactByClick('fatigue')">fatigue</span>
+                    <span class="symptom-chip" onclick="addFactByClick('shortness_of_breath')">shortness_of_breath</span>
+                </div>
+
+                <div class="facts-list" id="factsList"></div>
+            </div>
+
+            <div class="panel">
+                <h2>🔬 Inference Log</h2>
+                <div class="inference-log" id="inferenceLog">
+                    <div class="no-results">Run inference to see the reasoning process...</div>
+                </div>
+
+                <div class="stats" id="stats" style="display: none;">
+                    <div class="stat-card">
+                        <div class="stat-value" id="rulesApplied">0</div>
+                        <div class="stat-label">Rules Applied</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="factsDerived">0</div>
+                        <div class="stat-label">Facts Derived</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="iterations">0</div>
+                        <div class="stat-label">Iterations</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel results-panel">
+                <h2>🎯 Diagnosis Results</h2>
+                <div id="conclusions"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Rule-Based Expert System Engine
+        class ExpertSystem {
+            constructor() {
+                this.facts = new Set();
+                this.rules = [];
+                this.inferenceLog = [];
+                this.derivedFacts = new Set();
+                this.rulesApplied = 0;
+                this.iterations = 0;
+            }
+
+            addFact(fact) {
+                this.facts.add(fact.toLowerCase().trim().replace(/\s+/g, '_'));
+            }
+
+            removeFact(fact) {
+                this.facts.delete(fact);
+                this.derivedFacts.delete(fact);
+            }
+
+            addRule(conditions, conclusions, description) {
+                this.rules.push({
+                    conditions: conditions.map(c => c.toLowerCase()),
+                    conclusions: conclusions.map(c => c.toLowerCase()),
+                    description: description
+                });
+            }
+
+            checkConditions(rule) {
+                return rule.conditions.every(condition => this.facts.has(condition));
+            }
+
+            forwardChaining() {
+                this.inferenceLog = [];
+                this.rulesApplied = 0;
+                this.iterations = 0;
+                let newFactsAdded = true;
+
+                this.log("🚀 Starting Forward Chaining Inference...");
+                this.log(`📊 Initial Facts: ${Array.from(this.facts).join(', ')}`);
+
+                while (newFactsAdded) {
+                    this.iterations++;
+                    newFactsAdded = false;
+                    
+                    this.log(`\n🔄 Iteration ${this.iterations}:`);
+
+                    for (let rule of this.rules) {
+                        if (this.checkConditions(rule)) {
+                            let addedNew = false;
+                            
+                            for (let conclusion of rule.conclusions) {
+                                if (!this.facts.has(conclusion)) {
+                                    this.facts.add(conclusion);
+                                    this.derivedFacts.add(conclusion);
+                                    newFactsAdded = true;
+                                    addedNew = true;
+                                }
+                            }
+
+                            if (addedNew) {
+                                this.rulesApplied++;
+                                this.log(`✅ Rule Applied: ${rule.description}`);
+                                this.log(`   Conditions: ${rule.conditions.join(' AND ')}`);
+                                this.log(`   → New Facts: ${rule.conclusions.join(', ')}`);
+                            }
+                        }
+                    }
+
+                    if (!newFactsAdded) {
+                        this.log(`\n✋ No new facts derived. Inference complete.`);
+                    }
+                }
+
+                this.log(`\n📈 Final Statistics:`);
+                this.log(`   Total Iterations: ${this.iterations}`);
+                this.log(`   Rules Applied: ${this.rulesApplied}`);
+                this.log(`   Facts Derived: ${this.derivedFacts.size}`);
+                this.log(`   Final Facts: ${Array.from(this.facts).join(', ')}`);
+            }
+
+            log(message) {
+                this.inferenceLog.push({
+                    timestamp: new Date().toISOString(),
+                    message: message
+                });
+            }
+
+            getConclusions() {
+                const conclusions = [];
+                
+                // Check for specific diagnoses
+                if (this.facts.has('flu')) {
+                    conclusions.push({
+                        title: 'Influenza (Flu)',
+                        description: 'Based on the symptoms, this appears to be influenza. Recommend rest, fluids, and possibly antiviral medication if within 48 hours of symptom onset.'
+                    });
+                }
+                
+                if (this.facts.has('common_cold')) {
+                    conclusions.push({
+                        title: 'Common Cold',
+                        description: 'Symptoms suggest a common cold. Recommend rest, fluids, and over-the-counter symptom relief. Typically resolves in 7-10 days.'
+                    });
+                }
+                
+                if (this.facts.has('respiratory_infection')) {
+                    conclusions.push({
+                        title: 'Respiratory Infection',
+                        description: 'A respiratory infection is indicated. Monitor symptoms and seek medical attention if symptoms worsen or persist.'
+                    });
+                }
+                
+                if (this.facts.has('viral_infection')) {
+                    conclusions.push({
+                        title: 'Viral Infection',
+                        description: 'Evidence of a viral infection. Rest and supportive care recommended. Antibiotics are not effective against viral infections.'
+                    });
+                }
+                
+                if (this.facts.has('bacterial_infection')) {
+                    conclusions.push({
+                        title: 'Possible Bacterial Infection',
+                        description: 'Symptoms may indicate a bacterial infection. Medical consultation recommended for possible antibiotic treatment.'
+                    });
+                }
+
+                if (this.facts.has('severe_condition')) {
+                    conclusions.push({
+                        title: '⚠️ Severe Condition - Seek Medical Attention',
+                        description: 'Symptoms indicate a potentially severe condition. Please seek immediate medical attention.'
+                    });
+                }
+
+                return conclusions;
+            }
+
+            reset() {
+                this.facts.clear();
+                this.derivedFacts.clear();
+                this.inferenceLog = [];
+                this.rulesApplied = 0;
+                this.iterations = 0;
+            }
+        }
+
+        // Initialize Expert System
+        const expertSystem = new ExpertSystem();
+
+        // Define Knowledge Base - Medical Diagnosis Rules
+        function initializeRules() {
+            // Rule 1: Fever + Cough = Respiratory Infection
+            expertSystem.addRule(
+                ['fever', 'cough'],
+                ['respiratory_infection'],
+                'If patient has fever AND cough, then respiratory infection'
+            );
+
+            // Rule 2: Respiratory Infection + Sore Throat = Flu
+            expertSystem.addRule(
+                ['respiratory_infection', 'sore_throat'],
+                ['flu'],
+                'If respiratory infection AND sore throat, then likely flu'
+            );
+
+            // Rule 3: Fever + Headache + Body Ache = Viral Infection
+            expertSystem.addRule(
+                ['fever', 'headache', 'body_ache'],
+                ['viral_infection'],
+                'If fever AND headache AND body ache, then viral infection'
+            );
+
+            // Rule 4: Runny Nose + Sore Throat = Common Cold
+            expertSystem.addRule(
+                ['runny_nose', 'sore_throat'],
+                ['common_cold'],
+                'If runny nose AND sore throat, then common cold'
+            );
+
+            // Rule 5: Viral Infection + Fatigue = Flu
+            expertSystem.addRule(
+                ['viral_infection', 'fatigue'],
+                ['flu'],
+                'If viral infection AND fatigue, then likely flu'
+            );
+
+            // Rule 6: Cough + Shortness of Breath = Severe Respiratory Issue
+            expertSystem.addRule(
+                ['cough', 'shortness_of_breath'],
+                ['severe_respiratory_issue'],
+                'If cough AND shortness of breath, then severe respiratory issue'
+            );
+
+            // Rule 7: Severe Respiratory Issue = Severe Condition
+            expertSystem.addRule(
+                ['severe_respiratory_issue'],
+                ['severe_condition'],
+                'If severe respiratory issue, then seek immediate medical attention'
+            );
+
+            // Rule 8: Fever + Severe Condition = Critical
+            expertSystem.addRule(
+                ['fever', 'severe_condition'],
+                ['critical_condition'],
+                'If fever AND severe condition, then critical - emergency care needed'
+            );
+
+            // Rule 9: Sore Throat + Fever (without cough) = Bacterial Infection
+            expertSystem.addRule(
+                ['sore_throat', 'fever'],
+                ['possible_bacterial_throat_infection'],
+                'If sore throat AND fever, then possible bacterial throat infection'
+            );
+
+            // Rule 10: Bacterial Throat Infection = Bacterial Infection
+            expertSystem.addRule(
+                ['possible_bacterial_throat_infection'],
+                ['bacterial_infection'],
+                'If possible bacterial throat infection, then bacterial infection likely'
+            );
+
+            // Rule 11: Common Cold + Fatigue = Extended Rest Needed
+            expertSystem.addRule(
+                ['common_cold', 'fatigue'],
+                ['extended_rest_needed'],
+                'If common cold AND fatigue, then extended rest recommended'
+            );
+
+            // Rule 12: Respiratory Infection + Shortness of Breath = Severe Condition
+            expertSystem.addRule(
+                ['respiratory_infection', 'shortness_of_breath'],
+                ['severe_condition'],
+                'If respiratory infection AND shortness of breath, then severe condition'
+            );
+        }
+
+        // Initialize rules on load
+        initializeRules();
+
+        // UI Functions
+        function addFact() {
+            const input = document.getElementById('factInput');
+            const fact = input.value.trim();
+            
+            if (fact) {
+                expertSystem.addFact(fact);
+                input.value = '';
+                updateFactsList();
+            }
+        }
+
+        function addFactByClick(fact) {
+            expertSystem.addFact(fact);
+            updateFactsList();
+        }
+
+        function removeFact(fact) {
+            expertSystem.removeFact(fact);
+            updateFactsList();
+        }
+
+        function updateFactsList() {
+            const factsList = document.getElementById('factsList');
+            if (expertSystem.facts.size === 0) {
+                factsList.innerHTML = '';
+                return;
+            }
+
+            let html = '<h3 style="margin-top: 20px; margin-bottom: 10px; color: #667eea;">Current Facts:</h3>';
+            
+            expertSystem.facts.forEach(fact => {
+                const isDerived = expertSystem.derivedFacts.has(fact);
+                html += `
+                    <div class="fact-item ${isDerived ? 'derived' : ''}">
+                        <span>${fact.replace(/_/g, ' ')}</span>
+                        <div>
+                            <span class="fact-badge ${isDerived ? 'derived' : ''}">${isDerived ? 'DERIVED' : 'INPUT'}</span>
+                            <button class="remove-fact" onclick="removeFact('${fact}')">✕</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            factsList.innerHTML = html;
+        }
+
+        function runInference() {
+            if (expertSystem.facts.size === 0) {
+                alert('Please add at least one symptom before running diagnosis.');
+                return;
+            }
+
+            // Run forward chaining
+            expertSystem.forwardChaining();
+
+            // Update UI
+            updateInferenceLog();
+            updateConclusions();
+            updateStats();
+            updateFactsList();
+        }
+
+        function updateInferenceLog() {
+            const logDiv = document.getElementById('inferenceLog');
+            let html = '';
+
+            expertSystem.inferenceLog.forEach((entry, index) => {
+                const message = entry.message;
+                
+                if (message.startsWith('🚀') || message.startsWith('🔄') || message.startsWith('✋') || message.startsWith('📈')) {
+                    html += `<div class="log-step">${message}</div>`;
+                } else if (message.startsWith('✅')) {
+                    html += `<div class="log-rule">${message}</div>`;
+                } else if (message.startsWith('📊')) {
+                    html += `<div class="log-conclusion">${message}</div>`;
+                } else {
+                    html += `<div>${message}</div>`;
+                }
+            });
+
+            logDiv.innerHTML = html;
+        }
+
+        function updateConclusions() {
+            const conclusionsDiv = document.getElementById('conclusions');
+            const conclusions = expertSystem.getConclusions();
+
+            if (conclusions.length === 0) {
+                conclusionsDiv.innerHTML = '<div class="no-results">No specific diagnosis could be determined from the given symptoms.</div>';
+                return;
+            }
+
+            let html = '';
+            conclusions.forEach(conclusion => {
+                html += `
+                    <div class="conclusion-item">
+                        <h3>${conclusion.title}</h3>
+                        <p>${conclusion.description}</p>
+                    </div>
+                `;
+            });
+
+            conclusionsDiv.innerHTML = html;
+        }
+
+        function updateStats() {
+            document.getElementById('stats').style.display = 'grid';
+            document.getElementById('rulesApplied').textContent = expertSystem.rulesApplied;
+            document.getElementById('factsDerived').textContent = expertSystem.derivedFacts.size;
+            document.getElementById('iterations').textContent = expertSystem.iterations;
+        }
+
+        function reset() {
+            if (confirm('Are you sure you want to clear all facts and results?')) {
+                expertSystem.reset();
+                document.getElementById('factInput').value = '';
+                document.getElementById('factsList').innerHTML = '';
+                document.getElementById('inferenceLog').innerHTML = '<div class="no-results">Run inference to see the reasoning process...</div>';
+                document.getElementById('conclusions').innerHTML = '<div class="no-results">No results yet. Add symptoms and run diagnosis.</div>';
+                document.getElementById('stats').style.display = 'none';
+            }
+        }
+
+        // Allow Enter key to add fact
+        document.getElementById('factInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addFact();
+            }
+        });
+
+        // Initialize conclusions div
+        document.getElementById('conclusions').innerHTML = '<div class="no-results">No results yet. Add symptoms and run diagnosis.</div>';
+    </script>
+</body>
+</html>

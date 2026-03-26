@@ -1,0 +1,4 @@
+2026-03-26T14:54:55.260752 - ['fever', 'cough'] -> respiratory_infection
+2026-03-26T14:54:55.260916 - ['respiratory_infection', 'sore_throat'] -> flu
+2026-03-26T14:54:55.261088 - ['sore_throat', 'fever'] -> possible_bacterial_throat_infection
+2026-03-26T14:54:55.261299 - ['possible_bacterial_throat_infection'] -> bacterial_infection
